@@ -8,7 +8,6 @@ import java.util.*
 
 /**
  * 类描述:打字机效果自定义类
- * 出处:https://github.com/zmywly8866/TypeTextView
  */
 open class TypeTextView : AppCompatTextView {
     constructor(context: Context) : super(context)
@@ -16,41 +15,69 @@ open class TypeTextView : AppCompatTextView {
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
     companion object {
-        private const val TYPE_TIME_DELAY = 100
+        /**
+         * 默认显示下一个支付时间间隔
+         */
+        private const val TYPE_TIME_DELAY = 100L
 
     }
 
     interface OnTypeViewListener {
-        fun onTypeOver()
         fun onTypeStart()
+        fun onTypeOver()
     }
 
     var mOnTypeViewListener: OnTypeViewListener? = null
     var mShowTextString: String? = null
-    private val mTypeTimeDelay = TYPE_TIME_DELAY
-    private var mTypeTimer: Timer? = null
 
+    /**
+     * 动画时间间隔
+     */
+    private var mTypeTimeDelay: Long = TYPE_TIME_DELAY
 
-    fun startTypeTimer() {
-        stopTypeTimer()
-        text = ""
-        mTypeTimer = Timer()
-        mTypeTimer?.schedule(TypeTimerTask(this), mTypeTimeDelay.toLong(), mTypeTimeDelay.toLong())
+    public fun setTypeTimeDelay(typeTimeDelay: Long) {
+        mTypeTimeDelay = typeTimeDelay
     }
 
-    fun stopTypeTimer() {
+    /**
+     * 动画总时长
+     */
+    private var mAnimTime = 0L
+
+    public fun setAnimTime(animTime: Long) {
+        mAnimTime = animTime
+    }
+
+    private var mTypeTimer: Timer? = null
+
+    fun startTypeAnim() {
+        stopTypeAnim()
+        text = ""
+        mTypeTimer = Timer()
+        if (mAnimTime > 0) {
+            val current = text.toString()
+            if (current.isNotEmpty()) {
+                mTypeTimeDelay = mAnimTime / (current.length)
+            }
+        }
+        mTypeTimer?.schedule(TypeTimerTask(this), 0, mTypeTimeDelay)
+        mOnTypeViewListener?.onTypeStart()
+    }
+
+    fun stopTypeAnim() {
         mTypeTimer?.cancel()
+        mOnTypeViewListener?.onTypeOver()
     }
 
     private fun updateText() {
-        if (this.text.toString().length < (this.mShowTextString?.length ?: 0)) {
-            this.text = this.mShowTextString?.substring(
+        val current = text.toString()
+        if (current.length < (this.mShowTextString?.length ?: 0)) {
+            text = this.mShowTextString?.substring(
                 0,
-                this.text.toString().length + 1
+                current.length + 1
             )
         } else {
-            this.stopTypeTimer()
-            this.mOnTypeViewListener?.onTypeOver()
+            stopTypeAnim()
         }
     }
 
@@ -67,6 +94,7 @@ open class TypeTextView : AppCompatTextView {
         constructor(typeTextView: TypeTextView) : super() {
             view = WeakReference(typeTextView)
         }
+
 
         override fun run() {
             view.get()?.post {

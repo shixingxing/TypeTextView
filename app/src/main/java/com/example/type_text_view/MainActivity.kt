@@ -24,7 +24,9 @@ class MainActivity : AppCompatActivity() {
 
         binding.content.start.setOnClickListener {
             binding.content.text.mShowTextString = TEST_DATA
-            binding.content.text.startTypeTimer()
+            binding.content.text.setTypeTimeDelay(100)
+            binding.content.text.setAnimTime(8000)
+            binding.content.text.startTypeAnim()
         }
 
         binding.content.text.mOnTypeViewListener = object : TypeTextView.OnTypeViewListener {
